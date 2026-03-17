@@ -93,7 +93,7 @@ This model was selected because it achieved the best cross-validation performanc
 The model is deployed as a web application on Hugging Face Spaces.
 
 **Public application link:**  
-Add your Hugging Face Space link here
+https://huggingface.co/spaces/thajee/apartment-price-prediction-zurich
 
 ## Repository Files
 

@@ -1,26 +1,58 @@
-import streamlit as st
+import joblib
+import pandas as pd
+import gradio as gr
 
-# Seitentitel
-st.set_page_config(page_title="Apartment Price Prediction Zurich", page_icon="🏠")
+# Gespeichertes Modell laden
+# Wichtig: Die Datei "best_model.joblib" muss im gleichen Ordner liegen wie app.py
+model = joblib.load("best_model.joblib")
 
-# Überschrift
-st.title("🏠 Apartment Price Prediction Zurich")
-st.write("Diese App schätzt den Mietpreis einer Wohnung im Kanton Zürich.")
 
-# Eingaben
-living_area = st.number_input("Wohnfläche in m²", min_value=10, max_value=500, value=60)
-rooms = st.number_input("Anzahl Zimmer", min_value=1.0, max_value=10.0, value=2.5, step=0.5)
-year_built = st.number_input("Baujahr", min_value=1800, max_value=2025, value=2005)
-floor = st.number_input("Stockwerk", min_value=0, max_value=40, value=2)
-zip_code = st.text_input("PLZ", value="8001")
+def predict_rent(living_space, rooms, floor, year_built, zip_code, balcony, parking):
+    """
+    Erstellt aus den Benutzereingaben ein DataFrame
+    und gibt die Mietpreis-Vorhersage zurück.
+    """
 
-# Neues Feature
-apartment_age = 2025 - year_built
+    # Neue Feature berechnen
+    apartment_age = 2026 - year_built
 
-# Vorhersage
-if st.button("Preis vorhersagen"):
-    # Platzhalterformel bis dein echtes Modell eingebaut ist
-    predicted_price = 900 + living_area * 24 + rooms * 190 + floor * 20 - apartment_age * 3
+    # Eingabedaten in genau der Struktur vorbereiten,
+    # die auch beim Training verwendet wurde
+    input_data = pd.DataFrame([{
+        "living_space": living_space,
+        "rooms": rooms,
+        "floor": floor,
+        "year_built": year_built,
+        "apartment_age": apartment_age,
+        "zip_code": str(zip_code),
+        "balcony": balcony,
+        "parking": parking
+    }])
 
-    st.success(f"Geschätzter Mietpreis: CHF {predicted_price:,.2f}")
-    st.info(f"Neues Feature: Apartment Age = {apartment_age}")
+    # Vorhersage mit dem trainierten Modell
+    prediction = model.predict(input_data)[0]
+
+    # Schöne Ausgabe formatieren
+    return f"Geschätzte Monatsmiete: CHF {prediction:,.2f}"
+
+
+# Gradio-Interface definieren
+demo = gr.Interface(
+    fn=predict_rent,
+    inputs=[
+        gr.Number(label="Wohnfläche in m²"),
+        gr.Number(label="Zimmer"),
+        gr.Number(label="Stockwerk"),
+        gr.Number(label="Baujahr"),
+        gr.Textbox(label="PLZ"),
+        gr.Dropdown(choices=["yes", "no"], label="Balkon"),
+        gr.Dropdown(choices=["yes", "no"], label="Parkplatz")
+    ],
+    outputs=gr.Textbox(label="Vorhersage"),
+    title="Apartment Price Prediction Zurich",
+    description="Diese App schätzt die Monatsmiete einer Wohnung im Kanton Zürich."
+)
+
+# App starten
+if __name__ == "__main__":
+    demo.launch()
